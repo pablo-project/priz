@@ -10,6 +10,7 @@ interface WinnerCelebrationStepProps {
   prizeIcon?: string;
   ticketId: string;
   timestamp: string;
+  operatorPhone?: string;
 }
 
 export const WinnerCelebrationStep: React.FC<WinnerCelebrationStepProps> = ({
@@ -19,6 +20,7 @@ export const WinnerCelebrationStep: React.FC<WinnerCelebrationStepProps> = ({
   prizeIcon,
   ticketId,
   timestamp,
+  operatorPhone = '+998 93 799 04 23',
 }) => {
   // Fire festive confetti cannon on page load
   useEffect(() => {
@@ -95,13 +97,13 @@ export const WinnerCelebrationStep: React.FC<WinnerCelebrationStepProps> = ({
         Sovg‘angizni olish uchun operatorimiz bilan bog‘laning.
       </p>
 
-      {/* Prominent "Sovg‘ani olish" Button linking to tel:+998959090875 */}
+      {/* Prominent "Sovg‘ani olish" Button */}
       <a
-        href="tel:+998959090875"
+        href={`tel:${operatorPhone.replace(/\s+/g, '')}`}
         className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-emerald-500 via-emerald-400 to-emerald-600 hover:brightness-110 active:scale-[0.98] text-slate-950 font-black text-base uppercase tracking-wider shadow-xl shadow-emerald-500/30 flex items-center justify-center gap-3 transition-all mb-4"
       >
         <PhoneCall className="w-5 h-5 text-slate-950 shrink-0" />
-        <span>Sovg‘ani olish (+998 95 909 08 75)</span>
+        <span>Sovg‘ani olish ({operatorPhone})</span>
       </a>
 
       {/* Clear instruction text */}
