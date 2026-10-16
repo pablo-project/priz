@@ -8,8 +8,10 @@ import { ParticipantEntryStep } from './components/ParticipantEntryStep.js';
 import { CodeAssignedStep } from './components/CodeAssignedStep.js';
 import { WheelSpinStep } from './components/WheelSpinStep.js';
 import { WinnerCelebrationStep } from './components/WinnerCelebrationStep.js';
+import { PrizeShowcase } from './components/PrizeShowcase.js';
 import { AdminLogin } from './components/admin/AdminLogin.js';
 import { AdminDashboard } from './components/admin/AdminDashboard.js';
+import { Prize } from './types/index.js';
 
 export default function App() {
   const checkIsAdmin = () => {
@@ -49,7 +51,8 @@ export default function App() {
   const [activeWheelCode, setActiveWheelCode] = useState<string>('');
 
   // Wheel configuration & Segments count
-  const [totalSegments, setTotalSegments] = useState<number>(8);
+  const [totalSegments, setTotalSegments] = useState<number>(7);
+  const [prizes, setPrizes] = useState<Prize[]>([]);
   const [brandName, setBrandName] = useState<string>('Omadli Sovg‘a');
   const [urlQrCode, setUrlQrCode] = useState<string>('');
 
@@ -105,6 +108,15 @@ export default function App() {
       .then((res) => res.json())
       .then((data) => {
         if (data.totalSegments) setTotalSegments(data.totalSegments);
+      })
+      .catch(() => {});
+
+    fetch('/api/prizes')
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setPrizes(data);
+        }
       })
       .catch(() => {});
 
@@ -220,6 +232,7 @@ export default function App() {
             prizeIcon={spinWinnerResult.winningPrize.icon}
             ticketId={spinWinnerResult.ticketId}
             timestamp={spinWinnerResult.timestamp}
+            operatorPhone={assignedData?.operatorPhone}
           />
         )}
       </main>
