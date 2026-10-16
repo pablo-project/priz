@@ -147,11 +147,11 @@ export const ParticipantEntryStep: React.FC<ParticipantEntryStepProps> = ({
             <div className="pt-2 border-t border-red-800/60 flex items-center justify-between">
               <span className="text-[11px] text-red-300">Operator bilan bog‘lanish:</span>
               <a
-                href="tel:+998959090875"
+                href="tel:+998937990423"
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md transition-colors"
               >
                 <PhoneCall className="w-3.5 h-3.5" />
-                <span>+998 95 909 08 75</span>
+                <span>+998 93 799 04 23</span>
               </a>
             </div>
           </div>
