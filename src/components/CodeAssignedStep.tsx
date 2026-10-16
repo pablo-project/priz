@@ -13,12 +13,13 @@ import {
   User,
   Phone,
 } from 'lucide-react';
+import { PrizeIcon } from './PrizeIcon.js';
 
 interface CodeAssignedStepProps {
   participantName: string;
   phone?: string;
   specialCode: string;
-  assignedPrize?: {
+  assignedPrize: {
     id: string;
     name: string;
     description?: string;
@@ -35,8 +36,9 @@ export const CodeAssignedStep: React.FC<CodeAssignedStepProps> = ({
   participantName,
   phone,
   specialCode,
+  assignedPrize,
   telegramUrl,
-  operatorPhone = '+998 95 909 08 75',
+  operatorPhone = '+998 93 799 04 23',
   operatorTelegram = 'omadli_operator',
   onGoToWheel,
 }) => {
@@ -69,7 +71,7 @@ export const CodeAssignedStep: React.FC<CodeAssignedStepProps> = ({
         <span>AKSIYA ISHTIROKCHISI BO‘LDINGIZ</span>
       </div>
 
-      {/* Main Congratulation Heading */}
+      {/* Main Congratulation Heading Required by User */}
       <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-amber-300 to-amber-500 font-serif tracking-tight mb-2">
         Tabriklaymiz, siz aksiya ishtirokchisiga aylandingiz!
       </h1>
@@ -86,11 +88,28 @@ export const CodeAssignedStep: React.FC<CodeAssignedStepProps> = ({
         )}
       </div>
 
-      {/* Special Code Box Only (Prize Showcase Removed) */}
+      {/* Assigned Prize Showcase Card */}
       <div className="w-full bg-gradient-to-b from-[#0F1C3F] to-[#0A122A] border-2 border-amber-400/50 rounded-3xl p-6 sm:p-7 shadow-2xl relative overflow-hidden mb-5">
         <div className="absolute -top-16 -right-16 w-36 h-36 bg-amber-500/20 rounded-full blur-2xl pointer-events-none" />
 
-        <div className="bg-[#060A17] border border-amber-500/30 rounded-2xl p-4 sm:p-5 text-center shadow-inner">
+        <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-[#070D1F] border border-amber-500/40 mx-auto flex items-center justify-center text-amber-400 mb-3 shadow-inner">
+          <PrizeIcon name={assignedPrize.icon || 'gift'} className="w-8 h-8 sm:w-10 sm:h-10 text-amber-400" />
+        </div>
+
+        <div className="text-xs uppercase font-bold text-amber-400/90 tracking-wider mb-1">
+          🎁 Sizga biriktirilgan sovg‘a:
+        </div>
+        <div className="text-2xl sm:text-3xl font-black text-white font-serif mb-2">
+          {assignedPrize.name}
+        </div>
+        {assignedPrize.description && (
+          <p className="text-xs text-slate-400 max-w-xs mx-auto mb-4">
+            {assignedPrize.description}
+          </p>
+        )}
+
+        {/* Special Code Box with Copy */}
+        <div className="bg-[#060A17] border border-amber-500/30 rounded-2xl p-4 sm:p-5 text-center mt-2 shadow-inner">
           <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 flex items-center justify-center gap-1.5">
             <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
             <span>SIZNING MAXSUS AKSIYA KODINGIZ:</span>
@@ -129,7 +148,7 @@ export const CodeAssignedStep: React.FC<CodeAssignedStepProps> = ({
         </div>
       </div>
 
-      {/* Operator Activation Callout */}
+      {/* Operator Activation Callout (Strictly requested by user) */}
       <div className="w-full bg-gradient-to-r from-amber-950/80 via-amber-900/40 to-amber-950/80 border-2 border-amber-400/60 rounded-3xl p-5 sm:p-6 mb-5 text-left shadow-xl">
         <div className="flex items-start gap-3 mb-3">
           <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-amber-400 shrink-0 mt-0.5">
