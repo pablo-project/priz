@@ -1,23 +1,148 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { playTickSound, playWinSound } from '../utils/audio.js';
 
-interface WheelSegment {
+export interface WheelSegment {
   id: string;
   label: string;
   subLabel?: string;
-  color: string;
+  icon?: string;
+  color?: string;
 }
 
 interface FortuneWheelProps {
   segmentsCount?: number;
+  segments?: WheelSegment[];
   isSpinning: boolean;
   targetPrizeIndex: number | null;
   onSpinEnd: () => void;
   disabled?: boolean;
 }
 
+// Map icon names to emoji symbols for crisp canvas rendering
+function getPrizeEmoji(iconName?: string): string {
+  switch (iconName?.toLowerCase()) {
+    case 'car':
+    case 'avto':
+      return '🚗';
+    case 'plane':
+    case 'umra':
+      return '🕋';
+    case 'ticket':
+    case 'sanatoriy':
+    case 'vaucher':
+      return '🏖️';
+    case 'banknote':
+    case 'money':
+    case 'pul':
+      return '💰';
+    case 'trophy':
+    case 'konkurs':
+      return '🏆';
+    case 'smartphone':
+    case 'iphone':
+      return '📱';
+    case 'microwave':
+    case 'pech':
+      return '♨️';
+    default:
+      return '🎁';
+  }
+}
+
+// Format prize name for two-line canvas sector display
+function formatPrizeTitle(title: string): { line1: string; line2: string } {
+  if (!title) return { line1: 'Sovg‘a', line2: '' };
+
+  const clean = title.replace(/\(.*?\)/g, '').trim();
+
+  if (clean.toLowerCase().includes('nexia')) {
+    return { line1: 'Nexia 3', line2: 'Avtomobili' };
+  }
+  if (clean.toLowerCase().includes('umra')) {
+    return { line1: 'Umra Safariga', line2: 'Yo‘llanma' };
+  }
+  if (clean.toLowerCase().includes('sanatoriy') || clean.toLowerCase().includes('dam olish')) {
+    return { line1: 'Sanatoriyga', line2: '3 Kunlik Vaucher' };
+  }
+  if (clean.toLowerCase().includes('pul')) {
+    return { line1: 'Yirik Pul', line2: 'Mukofotlari' };
+  }
+  if (clean.toLowerCase().includes('konkurs')) {
+    return { line1: 'Katta Konkursga', line2: 'Yo‘llanma' };
+  }
+  if (clean.toLowerCase().includes('iphone')) {
+    return { line1: 'iPhone 16', line2: 'Pro Max' };
+  }
+  if (clean.toLowerCase().includes('pech') || clean.toLowerCase().includes('mikro')) {
+    return { line1: 'Mikroto‘lqinli', line2: 'Pech' };
+  }
+
+  const words = clean.split(' ');
+  if (words.length <= 1) {
+    return { line1: words[0], line2: '' };
+  }
+  const mid = Math.ceil(words.length / 2);
+  return {
+    line1: words.slice(0, mid).join(' '),
+    line2: words.slice(mid).join(' '),
+  };
+}
+
+export const DEFAULT_7_PRIZES: WheelSegment[] = [
+  {
+    id: 'prize-1',
+    label: 'Nexia 3 Avtomobili',
+    subLabel: 'Bosh sovrin',
+    icon: 'car',
+    color: '#DC2626',
+  },
+  {
+    id: 'prize-2',
+    label: 'Umra Safariga Yo‘llanma',
+    subLabel: 'Ziyorat',
+    icon: 'plane',
+    color: '#059669',
+  },
+  {
+    id: 'prize-3',
+    label: 'Sanatoriyga 3 Kunlik Vaucher',
+    subLabel: 'Dam olish',
+    icon: 'ticket',
+    color: '#2563EB',
+  },
+  {
+    id: 'prize-4',
+    label: 'Yirik Pul Mukofotlari',
+    subLabel: 'Naqd pul',
+    icon: 'banknote',
+    color: '#D97706',
+  },
+  {
+    id: 'prize-5',
+    label: 'Katta Konkursga Yo‘llanma',
+    subLabel: 'Final bosqich',
+    icon: 'trophy',
+    color: '#7C3AED',
+  },
+  {
+    id: 'prize-6',
+    label: 'iPhone 16 Pro Max',
+    subLabel: 'Smartfon',
+    icon: 'smartphone',
+    color: '#D4AF37',
+  },
+  {
+    id: 'prize-7',
+    label: 'Mikroto‘lqinli Pech',
+    subLabel: 'Maishiy texnika',
+    icon: 'microwave',
+    color: '#0D9488',
+  },
+];
+
 export const FortuneWheel: React.FC<FortuneWheelProps> = ({
-  segmentsCount = 8,
+  segmentsCount,
+  segments = [],
   isSpinning,
   targetPrizeIndex,
   onSpinEnd,
@@ -45,10 +170,23 @@ export const FortuneWheel: React.FC<FortuneWheelProps> = ({
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const totalSegments = segmentsCount > 0 ? segmentsCount : 8;
+  const activeSegments = segments && segments.length > 0 ? segments : DEFAULT_7_PRIZES;
+  const totalSegments = activeSegments.length;
   const segmentAngle = 360 / totalSegments;
 
-  // Render Wheel on Canvas (Clean, luxury gold & navy mysterious sectors with NO prize names exposed)
+  // Distinct luxury sector color scheme
+  const defaultColors = [
+    '#B45309', // Warm Bronze Gold
+    '#1E3A8A', // Deep Royal Blue
+    '#0284C7', // Vivid Sky Blue
+    '#92400E', // Amber Bronze
+    '#065F46', // Emerald Forest
+    '#4C1D95', // Royal Purple
+    '#0F172A', // Midnight Slate
+    '#B91C1C', // Ruby Crimson
+  ];
+
+  // Render Wheel on Canvas with Real 5 Prizes
   const drawWheel = (rotationAngle: number) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -102,18 +240,8 @@ export const FortuneWheel: React.FC<FortuneWheelProps> = ({
     // Convert degrees to radians
     ctx.rotate((rotationAngle * Math.PI) / 180);
 
-    const sectorColors = [
-      '#101B38', // Deep Navy
-      '#C2830B', // Warm Gold
-      '#0B132B', // Midnight Blue
-      '#B45309', // Deep Bronze
-      '#172554', // Royal Navy
-      '#D97706', // Radiant Amber Gold
-      '#0A1128', // Rich Obsidian
-      '#EAB308', // Yellow Gold
-    ];
-
     for (let i = 0; i < totalSegments; i++) {
+      const seg = activeSegments[i];
       const startAngle = (i * segmentAngle * Math.PI) / 180;
       const endAngle = ((i + 1) * segmentAngle * Math.PI) / 180;
 
@@ -123,36 +251,69 @@ export const FortuneWheel: React.FC<FortuneWheelProps> = ({
       ctx.arc(0, 0, outerRadius - 2, startAngle, endAngle);
       ctx.closePath();
 
-      ctx.fillStyle = sectorColors[i % sectorColors.length];
+      // Background color
+      const segColor = seg?.color || defaultColors[i % defaultColors.length];
+      ctx.fillStyle = segColor;
+      ctx.fill();
+
+      // Subtle radial dark gradient for 3D depth
+      const wedgeGrad = ctx.createRadialGradient(0, 0, innerRadius, 0, 0, outerRadius);
+      wedgeGrad.addColorStop(0, 'rgba(0,0,0,0.4)');
+      wedgeGrad.addColorStop(0.7, 'rgba(0,0,0,0.05)');
+      wedgeGrad.addColorStop(1, 'rgba(0,0,0,0.35)');
+      ctx.fillStyle = wedgeGrad;
       ctx.fill();
 
       // Golden border line between segments
-      ctx.strokeStyle = 'rgba(253, 224, 71, 0.65)';
-      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = 'rgba(253, 224, 71, 0.85)';
+      ctx.lineWidth = 2;
       ctx.stroke();
 
-      // Draw Sector Label (Mysterious lucky labels, NO specific prize names)
+      // Draw Sector Content (Prize Name & Icon)
       ctx.save();
       const midAngle = startAngle + (endAngle - startAngle) / 2;
       ctx.rotate(midAngle);
 
-      const textRadius = outerRadius * 0.65;
+      // Translate along the radial direction towards the middle of the segment
+      const textRadius = outerRadius * 0.62;
       ctx.translate(textRadius, 0);
       ctx.rotate(Math.PI / 2);
 
-      // Sektor naqshi
-      ctx.fillStyle = '#FEF08A';
-      ctx.font = `700 ${displaySize < 350 ? '11px' : '13px'} 'Cinzel', serif`;
+      const isSmall = displaySize < 350;
+
+      // Draw Prize Emoji / Icon
+      const emoji = getPrizeEmoji(seg?.icon);
+      ctx.font = `${isSmall ? '16px' : '20px'} sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.shadowColor = 'rgba(0,0,0,0.8)';
+      ctx.shadowColor = 'rgba(0,0,0,0.9)';
       ctx.shadowBlur = 4;
-      ctx.fillText('OMAD', 0, -4);
+      ctx.fillText(emoji, 0, isSmall ? -24 : -28);
 
-      // Sektor raqami
+      // Draw Prize Title lines
+      const prizeName = seg?.label || `Sovg‘a №${i + 1}`;
+      const { line1, line2 } = formatPrizeTitle(prizeName);
+
       ctx.fillStyle = '#FFFFFF';
-      ctx.font = `600 ${displaySize < 350 ? '9px' : '10px'} 'Plus Jakarta Sans', sans-serif`;
-      ctx.fillText(`№ ${i + 1}`, 0, 10);
+      ctx.font = `800 ${isSmall ? '10px' : '12px'} 'Plus Jakarta Sans', sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.shadowColor = 'rgba(0,0,0,0.95)';
+      ctx.shadowBlur = 5;
+
+      if (line2) {
+        ctx.fillText(line1, 0, isSmall ? -8 : -10);
+        ctx.fillStyle = '#FEF08A';
+        ctx.font = `700 ${isSmall ? '9px' : '11px'} 'Plus Jakarta Sans', sans-serif`;
+        ctx.fillText(line2, 0, isSmall ? 6 : 7);
+      } else {
+        ctx.fillText(line1, 0, 0);
+      }
+
+      // Draw Sector Number
+      ctx.fillStyle = '#FCD34D';
+      ctx.font = `600 ${isSmall ? '8px' : '9px'} sans-serif`;
+      ctx.fillText(`★ № ${i + 1} ★`, 0, isSmall ? 20 : 24);
 
       ctx.restore();
     }
@@ -214,7 +375,7 @@ export const FortuneWheel: React.FC<FortuneWheelProps> = ({
 
   useEffect(() => {
     drawWheel(currentRotationRef.current);
-  }, [size, totalSegments]);
+  }, [size, totalSegments, segments]);
 
   // Handle Spinning Animation (stops precisely at server-dictated targetPrizeIndex)
   useEffect(() => {
@@ -278,7 +439,7 @@ export const FortuneWheel: React.FC<FortuneWheelProps> = ({
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [isSpinning, targetPrizeIndex, totalSegments]);
+  }, [isSpinning, targetPrizeIndex, totalSegments, segmentAngle]);
 
   return (
     <div className="relative flex flex-col items-center justify-center p-2 select-none">
