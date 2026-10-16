@@ -13,7 +13,7 @@ interface NavbarProps {
 export const Navbar: React.FC<NavbarProps> = ({
   brandName = 'Omadli Sovg‘a',
   telegramUrl = 'https://t.me/omadli_sovgala_official',
-  operatorPhone = '+998 90 123 45 67',
+  operatorPhone = '+998 93 799 04 23',
   onOpenAdmin,
   isAdminLoggedIn,
   onAdminDashboard,
