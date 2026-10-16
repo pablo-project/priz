@@ -8,6 +8,7 @@ import {
   normalizePhone,
   getStats,
   DatabaseSchema,
+  logParticipantPermanently,
 } from './server/db.js';
 import { Prize, AllowedPhone, ProductQR, Winner } from './src/types/index.js';
 
@@ -89,45 +90,64 @@ app.get('/api/public/info', (req: Request, res: Response) => {
   });
 });
 
-// 2. Wheel segments configuration (names, counts, and probabilities are strictly hidden from participants)
+// 2. Wheel segments configuration (returns the active prizes directly on the wheel)
 app.get('/api/wheel-segments', (req: Request, res: Response) => {
   const db = getDatabase();
   const activePrizes = db.prizes.filter((p) => p.isActive);
-  const total = activePrizes.length > 0 ? activePrizes.length : 8;
-  const segments = (activePrizes.length > 0 ? activePrizes : Array.from({ length: 8 })).map((p: any, idx) => ({
-    id: `seg-${idx + 1}`,
-    label: `★ OMAD ★`,
-    subLabel: `№ ${idx + 1}`,
-    color: p?.color || (idx % 2 === 0 ? '#D4AF37' : '#1E293B'),
+  const total = activePrizes.length > 0 ? activePrizes.length : 7;
+  const segments = activePrizes.map((p, idx) => ({
+    id: p.id,
+    label: p.name,
+    subLabel: p.description || '',
+    icon: p.icon,
+    color: p.color,
   }));
   res.json({
     totalSegments: total,
     segments,
+    prizes: activePrizes,
   });
 });
 
+// Public Prizes list
+app.get('/api/prizes', (req: Request, res: Response) => {
+  const db = getDatabase();
+  const activePrizes = db.prizes.filter((p) => p.isActive);
+  res.json(activePrizes);
+});
+
 // 3. NEW WORKFLOW: Register Participant (Scan QR -> Enter Name, Surname, Phone -> Get Assigned Prize & Special Code & Telegram Link)
-// Helper to sync newly registered participant to Google Sheets
+// Helper to sync newly registered participant to Google Sheets (Only 5 fields: Sana, Ism, Familiya, Telefon, Maxsus Kod)
 async function syncToGoogleSheets(data: {
   firstName: string;
   lastName: string;
-  fullName: string;
   phone: string;
   specialCode: string;
-  assignedPrize: string;
-  status: string;
-  qrCodeId?: string;
   timestamp: string;
 }) {
   const db = getDatabase();
-  const webhookUrl = db.settings.googleSheetsWebhookUrl;
+  const webhookUrl = process.env.GOOGLE_SHEETS_WEBHOOK_URL || db.settings.googleSheetsWebhookUrl;
   if (!webhookUrl || !webhookUrl.trim().startsWith('http')) return;
 
   try {
+    const payload = {
+      sana: data.timestamp,
+      ism: data.firstName,
+      familiya: data.lastName,
+      telefon: data.phone,
+      maxsusKod: data.specialCode,
+      // Compatibility aliases
+      timestamp: data.timestamp,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      phone: data.phone,
+      specialCode: data.specialCode,
+    };
+
     const res = await fetch(webhookUrl.trim(), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
+      body: JSON.stringify(payload),
       redirect: 'follow',
     });
     console.log(`[Google Sheets Sync] Status: ${res.status}`);
@@ -145,7 +165,7 @@ async function syncToFirebase(data: {
   createdAt: string;
 }) {
   const db = getDatabase();
-  const fbUrl = db.settings.firebaseDatabaseUrl;
+  const fbUrl = process.env.FIREBASE_DATABASE_URL || db.settings.firebaseDatabaseUrl;
   if (!fbUrl || !fbUrl.trim().startsWith('http')) return;
 
   try {
@@ -210,7 +230,7 @@ app.post('/api/register-participant', async (req: Request, res: Response) => {
         db.settings.telegramChannelUrl ||
         'https://t.me/omadli_sovgala_official';
 
-      const operatorPhone = db.settings.operatorPhone || '+998 95 909 08 75';
+      const operatorPhone = db.settings.operatorPhone || '+998 93 799 04 23';
       const operatorTelegram = db.settings.operatorTelegram || '@omadli_operator';
 
       // Check if this phone number already exists in allowedPhones (avvaldan kiritilgan yoki belgilangan raqamlar)
@@ -265,17 +285,13 @@ app.post('/api/register-participant', async (req: Request, res: Response) => {
 
         saveDatabase(db);
 
-        // Sync to Google Sheets
+        // Sync to Google Sheets (Sana, Ism, Familiya, Telefon, Maxsus Kod)
         syncToGoogleSheets({
           firstName: cleanFirst,
           lastName: cleanLast,
-          fullName: `${cleanFirst} ${cleanLast}`,
           phone: normalizedPhone,
           specialCode: existing.specialCode,
-          assignedPrize: prize.name,
-          status: existing.isActive ? 'Aktiv (Faol)' : 'Kutilmoqda (Faol emas)',
-          qrCodeId: qrCodeId ? qrCodeId.trim().toUpperCase() : undefined,
-          timestamp: new Date().toLocaleString('uz-UZ'),
+          timestamp: new Date().toLocaleString('uz-UZ', { timeZone: 'Asia/Tashkent' }),
         });
 
         return {
@@ -344,18 +360,15 @@ app.post('/api/register-participant', async (req: Request, res: Response) => {
 
       db.allowedPhones.unshift(newRecord);
       saveDatabase(db);
+      logParticipantPermanently(newRecord);
 
-      // Asynchronously sync new participant to Google Sheets
+      // Asynchronously sync new participant to Google Sheets (Sana, Ism, Familiya, Telefon, Maxsus Kod)
       syncToGoogleSheets({
         firstName: cleanFirst,
         lastName: cleanLast,
-        fullName: participantName,
         phone: normalizedPhone,
         specialCode,
-        assignedPrize: chosenPrize.name,
-        status: 'Kutilmoqda (Faol emas)',
-        qrCodeId: qrCodeId ? qrCodeId.trim().toUpperCase() : undefined,
-        timestamp: new Date().toLocaleString('uz-UZ'),
+        timestamp: new Date().toLocaleString('uz-UZ', { timeZone: 'Asia/Tashkent' }),
       });
 
       // Asynchronously sync new participant to Firebase (faqat yangi kirgan ism-familiya va raqamlar)
