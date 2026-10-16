@@ -16,7 +16,7 @@ export const StatusAlert: React.FC<StatusAlertProps> = ({
   message,
   prizeName,
   wonAt,
-  operatorPhone = '+998 90 123 45 67',
+  operatorPhone = '+998 93 799 04 23',
   operatorTelegram = '@omadli_operator',
   onClose,
 }) => {
