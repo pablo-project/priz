@@ -92,21 +92,7 @@ export const CodeAssignedStep: React.FC<CodeAssignedStepProps> = ({
       <div className="w-full bg-gradient-to-b from-[#0F1C3F] to-[#0A122A] border-2 border-amber-400/50 rounded-3xl p-6 sm:p-7 shadow-2xl relative overflow-hidden mb-5">
         <div className="absolute -top-16 -right-16 w-36 h-36 bg-amber-500/20 rounded-full blur-2xl pointer-events-none" />
 
-        <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-[#070D1F] border border-amber-500/40 mx-auto flex items-center justify-center text-amber-400 mb-3 shadow-inner">
-          <PrizeIcon name={assignedPrize.icon || 'gift'} className="w-8 h-8 sm:w-10 sm:h-10 text-amber-400" />
-        </div>
-
-        <div className="text-xs uppercase font-bold text-amber-400/90 tracking-wider mb-1">
-          🎁 Sizga biriktirilgan sovg‘a:
-        </div>
-        <div className="text-2xl sm:text-3xl font-black text-white font-serif mb-2">
-          {assignedPrize.name}
-        </div>
-        {assignedPrize.description && (
-          <p className="text-xs text-slate-400 max-w-xs mx-auto mb-4">
-            {assignedPrize.description}
-          </p>
-        )}
+       
 
         {/* Special Code Box with Copy */}
         <div className="bg-[#060A17] border border-amber-500/30 rounded-2xl p-4 sm:p-5 text-center mt-2 shadow-inner">
